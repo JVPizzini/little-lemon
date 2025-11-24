@@ -7,7 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-
+//
 const FeedbackForm = () => {
   // declare the variables
   const [firstName, onChangeFirstName] = useState("");
