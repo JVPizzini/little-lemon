@@ -1,3 +1,4 @@
+import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -13,6 +14,8 @@ import Subscribe from "../components/subscribe";
 import { Onboarding } from "../screens/Onboarding";
 import { Profile } from "../screens/Profile";
 import { SplashScreen } from "../screens/SplashScreen";
+import { store } from "../store";
+import { Home } from "../screens/Home";
 // import Tab from "./tab";
 
 const Stack = createNativeStackNavigator();
@@ -84,12 +87,33 @@ function TabRoutes() {
 }
 
 function Router() {
-  const isLoggedIn = false;
+  const [isLoggedIn, setIsLoggedIn] = React.useState<boolean | null>(null);
 
-  const isLoading = false;
+  React.useEffect(() => {
+    let isMounted = true;
 
-  if (isLoading) {
-    // We haven't finished reading from AsyncStorage yet
+    const loadUser = async () => {
+      const userInfo = await store.getStore<{ isLoggedIn?: boolean }>(
+        "userInfo"
+      );
+      if (!isMounted) return;
+      setIsLoggedIn(Boolean(userInfo?.isLoggedIn));
+    };
+
+    loadUser();
+
+    const unsubscribe = store.subscribe("userInfo", (value) => {
+      if (!isMounted) return;
+      setIsLoggedIn(Boolean((value as { isLoggedIn?: boolean })?.isLoggedIn));
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, []);
+
+  if (isLoggedIn === null) {
     return <SplashScreen />;
   }
 

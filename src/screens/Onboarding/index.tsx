@@ -9,6 +9,8 @@ import {
   View,
 } from "react-native";
 
+import { store } from "../../store";
+
 export function Onboarding() {
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
@@ -24,14 +26,16 @@ export function Onboarding() {
     return re.test(String(email).toLowerCase());
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     // Handle navigation to the next onboarding screen
     const isValidEmail = validateEmail(email);
 
-    Alert.alert(
-      "Onboarding Info",
-      `Name: ${name}\nEmail: ${email}\nEmail is valid: ${isValidEmail}`
-    );
+    if (isValidEmail) {
+      await store.setStore("userInfo", { name, email, isLoggedIn: true });
+      console.log("✅ User info saved to store");
+    } else {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
+    }
   };
 
   return (
