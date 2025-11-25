@@ -10,6 +10,9 @@ import { ComponentProps } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import Welcome from "../components/welcome2";
 import Subscribe from "../components/subscribe";
+import { Onboarding } from "../screens/Onboarding";
+import { Profile } from "../screens/Profile";
+import { SplashScreen } from "../screens/SplashScreen";
 // import Tab from "./tab";
 
 const Stack = createNativeStackNavigator();
@@ -81,17 +84,32 @@ function TabRoutes() {
 }
 
 function Router() {
+  const isLoggedIn = false;
+
+  const isLoading = false;
+
+  if (isLoading) {
+    // We haven't finished reading from AsyncStorage yet
+    return <SplashScreen />;
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="welcome"
+        // initialRouteName=""
         screenOptions={{
-          headerShown: true,
+          headerShown: false,
           headerStyle: { backgroundColor: "#ffffff" },
         }}
       >
-        <Stack.Screen name="welcome" component={Welcome} />
-        <Stack.Screen name="Subscribe" component={Subscribe} />
+        {!isLoggedIn ? (
+          <Stack.Screen name="Onboarding" component={Onboarding} />
+        ) : (
+          <Stack.Screen name="Profile" component={Profile} />
+        )}
+
+        {/* <Stack.Screen name="welcome" component={Welcome} />
+        <Stack.Screen name="Subscribe" component={Subscribe} /> */}
         {/* <Stack.Screen
           name="Welcome"
           component={WelcomeScreen}
