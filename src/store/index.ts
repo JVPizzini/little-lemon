@@ -26,6 +26,20 @@ export async function getStore<T = any>(name: string): Promise<T | null> {
   }
 }
 
+export async function getAbbreviatedName() {
+  const userInfo = await getStore<{ firstName?: string; lastName?: string }>(
+    "userInfo"
+  );
+  const firstName = userInfo?.firstName ?? "";
+  const lastName = userInfo?.lastName ?? "";
+
+  const abbreviatedName = `${firstName.charAt(0)}${lastName.charAt(
+    0
+  )}`.toUpperCase();
+
+  return abbreviatedName;
+}
+
 export function subscribe(name: string, listener: Listener) {
   const callbacks = listeners.get(name) ?? new Set<Listener>();
   callbacks.add(listener);

@@ -6,13 +6,46 @@ import {
   Image,
   TouchableOpacity,
   TextInput,
+  ScrollView,
+  Alert,
+  Button,
 } from "react-native";
 import Checkbox from "react-native-bouncy-checkbox";
+
+import * as ImagePicker from "expo-image-picker";
+import { getAbbreviatedName } from "../../store";
+
 export function Profile() {
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [phone, setPhone] = React.useState("");
+  const [image, setImage] = React.useState<string | null>(null);
+  const [abbreviatedName, setAbbreviatedName] = React.useState("");
+
+  const pickImage = React.useCallback(async () => {
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permissionResult.granted) {
+      Alert.alert(
+        "Permission required",
+        "Permission to access the media library is required."
+      );
+      return;
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images", "videos"],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  }, []);
 
   const [orderStatuses, setOrderStatuses] = React.useState(false);
   const [passwordChange, setPasswordChange] = React.useState(false);
@@ -37,16 +70,38 @@ export function Profile() {
     { title: "Phone", value: phone, setter: setPhone },
   ];
 
+  React.useEffect(() => {
+    const loadName = async () => {
+      const name = await getAbbreviatedName();
+
+      setAbbreviatedName(name === "" ? "JV" : name);
+    };
+
+    loadName();
+  }, []);
+
   return (
-    <View style={styles.container}>
-      {headerProfile()}
+    <ScrollView contentContainerStyle={styles.container}>
+      <HeaderProfile
+        image={image}
+        name={abbreviatedName}
+        onPickImage={pickImage}
+      />
       {formProfile(inputList, checkboxList)}
       {footerProfile()}
-    </View>
+    </ScrollView>
   );
 }
 //------ HEADER
-function headerProfile() {
+function HeaderProfile({
+  image,
+  name,
+  onPickImage,
+}: {
+  image: string | null;
+  name: string;
+  onPickImage: () => void;
+}) {
   return (
     <View style={styles.containerHeader}>
       <Text style={{ fontSize: 24, fontWeight: "bold", paddingLeft: 20 }}>
@@ -54,13 +109,37 @@ function headerProfile() {
       </Text>
       <View style={{ flex: 1 }}>
         <View style={styles.avatarContainer}>
-          <View>
-            <Text style={{ paddingLeft: 20, color: "gray" }}>Avatar</Text>
-            <Image
-              style={{ width: 80, height: 80, borderRadius: 50 }}
-              resizeMode="contain"
-              source={require("../../../CURSO/figma/Little Lemon Images/Profile.png")}
-            />
+          <View style={{ paddingLeft: 20 }}>
+            <Text style={{ color: "gray", paddingLeft: 20 }}>Avatar</Text>
+            <TouchableOpacity onPress={onPickImage}>
+              {image ? (
+                <Image
+                  source={{ uri: image }}
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 40,
+                  }}
+                />
+              ) : (
+                <View
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 40,
+                    backgroundColor: "gray",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text
+                    style={{ fontSize: 24, fontWeight: "bold", color: "white" }}
+                  >
+                    {name}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
           <TouchableOpacity
             style={[
@@ -73,7 +152,9 @@ function headerProfile() {
           <TouchableOpacity
             style={[styles.editButton, { borderColor: "gray", borderWidth: 1 }]}
           >
-            <Text style={styles.avatarButtonText}>Remove</Text>
+            <Text style={[styles.avatarButtonText, { color: "gray" }]}>
+              Remove
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -96,19 +177,29 @@ function formProfile(
   return (
     <View style={styles.containerForm}>
       {inputList.map((inputItem, index) => (
-        <View key={index}>
+        <View key={index} style={{ width: "80%", marginBottom: 20 }}>
           {inputFormProfile(inputItem.title, inputItem.setter, inputItem.value)}
         </View>
       ))}
-      {checkboxList.map((checkboxItem, index) => (
-        <View key={index}>
-          {checkInputProfile(
+
+      <View style={{ width: "80%" }}>
+        <Text
+          style={{
+            marginBottom: 10,
+            fontWeight: "bold",
+            fontSize: 20,
+            color: "#6a6a6aff",
+          }}
+        >{`Email notifications`}</Text>
+        {checkboxList.map((checkboxItem, index) =>
+          checkInputProfile(
             checkboxItem.title,
             checkboxItem.setter,
-            checkboxItem.value
-          )}
-        </View>
-      ))}
+            checkboxItem.value,
+            `checkbox-${index}`
+          )
+        )}
+      </View>
     </View>
   );
 }
@@ -118,37 +209,37 @@ function inputFormProfile(
   value: string
 ) {
   return (
-    <View
-      style={{
-        backgroundColor: "white",
-
-        width: "100%",
-        alignItems: "center",
-      }}
-    >
-      <View style={{ width: "80%" }}>
-        <Text>{title}</Text>
-
-        <TextInput
-          style={styles.input}
-          onChangeText={setNewValue}
-          value={value}
-        />
-      </View>
+    <View style={{ width: "100%" }}>
+      <Text>{title}</Text>
+      <TextInput
+        style={styles.input}
+        onChangeText={setNewValue}
+        value={value}
+      />
     </View>
   );
 }
 function checkInputProfile(
   title: string,
   setNewValue: (value: boolean) => void,
-  value: boolean
+  value: boolean,
+  key: string
 ) {
   return (
     <Checkbox
+      key={key}
       size={25}
       isChecked={value}
       text={title}
+      style={{ marginBottom: 10 }}
       onPress={setNewValue}
+      innerIconStyle={{
+        borderColor: "green",
+        borderRadius: 5,
+      }}
+      iconStyle={{ borderRadius: 5 }}
+      fillColor={"#039719"}
+      unFillColor={"transparent"}
       textStyle={{
         textDecorationLine: "none",
       }}
@@ -156,11 +247,61 @@ function checkInputProfile(
   );
 }
 //------ FOOTER
-
 function footerProfile() {
   return (
     <View style={styles.containerFooter}>
-      <Text>Footer Profile</Text>
+      <View
+        style={{
+          width: "100%",
+
+          justifyContent: "center",
+          paddingHorizontal: 30,
+          marginBottom: 20,
+        }}
+      >
+        <TouchableOpacity
+          style={[
+            styles.changeButton,
+            {
+              backgroundColor: "#dbba17",
+              borderColor: "#ba7507",
+              borderWidth: 1,
+              alignItems: "center",
+              justifyContent: "center",
+            },
+          ]}
+        >
+          <Text style={[styles.textChangeButton, { color: "black" }]}>
+            Log out
+          </Text>
+        </TouchableOpacity>
+      </View>
+      <View
+        style={{
+          width: "100%",
+
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20,
+        }}
+      >
+        <TouchableOpacity
+          style={[
+            styles.changeButton,
+            { borderColor: "green", borderWidth: 1 },
+          ]}
+        >
+          <Text style={[styles.textChangeButton, { color: "green" }]}>
+            Discard changes
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.changeButton, { backgroundColor: "green" }]}
+        >
+          <Text style={styles.textChangeButton}>Save changes</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -174,10 +315,6 @@ export const styles = StyleSheet.create({
   containerHeader: {
     flex: 1,
     paddingTop: 60,
-
-    // justifyContent: "center",
-
-    backgroundColor: "lightblue",
     width: "100%",
   },
   avatarContainer: {
@@ -185,7 +322,6 @@ export const styles = StyleSheet.create({
     padding: 20,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "lightgray",
     gap: 10,
     // justifyContent: "center",
   },
@@ -206,7 +342,7 @@ export const styles = StyleSheet.create({
   containerForm: {
     flex: 3,
 
-    backgroundColor: "lightgreen",
+    alignItems: "center",
     width: "100%",
   },
   input: {
@@ -214,15 +350,23 @@ export const styles = StyleSheet.create({
     borderColor: "gray",
     borderWidth: 1,
     borderRadius: 5,
-    marginBottom: 20,
+
     paddingHorizontal: 10,
   },
   //------ FOOTER
   containerFooter: {
-    flex: 0.5,
+    paddingBottom: 50,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "lightcoral",
+
     width: "100%",
+  },
+  changeButton: {
+    padding: 10,
+    borderRadius: 5,
+  },
+  textChangeButton: {
+    color: "white",
+    fontWeight: "bold",
   },
 });
