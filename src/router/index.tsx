@@ -111,11 +111,11 @@ function Router() {
       isMounted = false;
       unsubscribe();
     };
-  }, []);
+  }, [isLoggedIn]);
 
-  if (isLoggedIn === null) {
-    return <SplashScreen />;
-  }
+  // if (isLoggedIn === null) {
+  //   return <SplashScreen />;
+  // }
 
   return (
     <NavigationContainer>

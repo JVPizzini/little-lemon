@@ -9,11 +9,17 @@ import {
   ScrollView,
   Alert,
   Button,
+  ActivityIndicator,
 } from "react-native";
 import Checkbox from "react-native-bouncy-checkbox";
 
 import * as ImagePicker from "expo-image-picker";
-import { getAbbreviatedName } from "../../store";
+import {
+  getAbbreviatedName,
+  getStore,
+  setStore,
+  signOutUser,
+} from "../../store";
 
 export function Profile() {
   const [firstName, setFirstName] = React.useState("");
@@ -23,34 +29,11 @@ export function Profile() {
   const [image, setImage] = React.useState<string | null>(null);
   const [abbreviatedName, setAbbreviatedName] = React.useState("");
 
-  const pickImage = React.useCallback(async () => {
-    const permissionResult =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (!permissionResult.granted) {
-      Alert.alert(
-        "Permission required",
-        "Permission to access the media library is required."
-      );
-      return;
-    }
-
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images", "videos"],
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-    }
-  }, []);
-
   const [orderStatuses, setOrderStatuses] = React.useState(false);
   const [passwordChange, setPasswordChange] = React.useState(false);
   const [specialOffers, setSpecialOffers] = React.useState(false);
   const [newsLetter, setNewsLetter] = React.useState(false);
+  const [loadingImagePicker, setLoadingImagePicker] = React.useState(false);
 
   const checkboxList = [
     { title: "Order Statuses", value: orderStatuses, setter: setOrderStatuses },
@@ -70,38 +53,150 @@ export function Profile() {
     { title: "Phone", value: phone, setter: setPhone },
   ];
 
-  React.useEffect(() => {
-    const loadName = async () => {
-      const name = await getAbbreviatedName();
+  // handlers
+  const handlePickImage = React.useCallback(async () => {
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-      setAbbreviatedName(name === "" ? "JV" : name);
+    if (!permissionResult.granted) {
+      Alert.alert(
+        "Permission required",
+        "Permission to access the media library is required."
+      );
+      return;
+    }
+    setLoadingImagePicker(true);
+
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images", "videos"],
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        setImage(result.assets[0].uri);
+      }
+    } catch (err) {
+      console.log("Erro no ImagePicker", err);
+    } finally {
+      setLoadingImagePicker(false);
+    }
+  }, []);
+
+  const handleSignOut = React.useCallback(() => {
+    // Implement logout functionality here
+    signOutUser();
+  }, []);
+
+  const handleSaveProfile = React.useCallback(async () => {
+    const payload = {
+      isLoggedIn: true, // keep user authenticated
+      name: `${firstName} ${lastName}`.trim(),
+      email,
+      phone,
+      image,
+      preferences: {
+        orderStatuses,
+        passwordChange,
+        specialOffers,
+        newsLetter,
+      },
     };
 
-    loadName();
+    await setStore("userInfo", payload);
+    Alert.alert("Profile", "Changes saved successfully.");
+  }, [
+    email,
+    firstName,
+    image,
+    lastName,
+    newsLetter,
+    orderStatuses,
+    passwordChange,
+    phone,
+    specialOffers,
+  ]);
+
+  const handleResetProfile = React.useCallback(async () => {
+    setFirstName("");
+    setLastName("");
+    setEmail("");
+    setPhone("");
+    setImage(null);
+    setOrderStatuses(false);
+    setPasswordChange(false);
+    setSpecialOffers(false);
+    setNewsLetter(false);
+
+    await setStore("userInfo", {
+      isLoggedIn: true,
+      name: "",
+      email: "",
+      phone: "",
+      image: null,
+      preferences: {
+        orderStatuses: false,
+        passwordChange: false,
+        specialOffers: false,
+        newsLetter: false,
+      },
+    });
+  }, []);
+
+  React.useEffect(() => {
+    const loadInfo = async () => {
+      const abbreviatedName = await getAbbreviatedName();
+      const userInfo = await getStore("userInfo");
+      setFirstName(userInfo?.name || "");
+      setEmail(userInfo?.email || "");
+
+      setAbbreviatedName(abbreviatedName === "" ? "JV" : abbreviatedName);
+    };
+
+    loadInfo();
   }, []);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <HeaderProfile
         image={image}
-        name={abbreviatedName}
-        onPickImage={pickImage}
+        // name={abbreviatedName}
+
+        onPickImage={handlePickImage}
+        loadingImagePicker={loadingImagePicker}
       />
       {formProfile(inputList, checkboxList)}
-      {footerProfile()}
+      {footerProfile(handleSignOut, handleResetProfile, handleSaveProfile)}
     </ScrollView>
   );
 }
+
+//////////////////////////////// COMPONENTS ////////////////////////////////
 //------ HEADER
 function HeaderProfile({
   image,
-  name,
+
   onPickImage,
+  loadingImagePicker,
 }: {
   image: string | null;
-  name: string;
+
   onPickImage: () => void;
+  loadingImagePicker: boolean;
 }) {
+  const [abbreviatedName, setAbbreviatedName] = React.useState("");
+  React.useEffect(() => {
+    const loadInfo = async () => {
+      const abbreviatedName = await getAbbreviatedName();
+
+      setAbbreviatedName(abbreviatedName === "" ? "JV" : abbreviatedName);
+    };
+
+    loadInfo();
+  }, []);
+
   return (
     <View style={styles.containerHeader}>
       <Text style={{ fontSize: 24, fontWeight: "bold", paddingLeft: 20 }}>
@@ -111,43 +206,47 @@ function HeaderProfile({
         <View style={styles.avatarContainer}>
           <View style={{ paddingLeft: 20 }}>
             <Text style={{ color: "gray", paddingLeft: 20 }}>Avatar</Text>
-            <TouchableOpacity onPress={onPickImage}>
-              {image ? (
-                <Image
-                  source={{ uri: image }}
-                  style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: 40,
-                  }}
-                />
-              ) : (
-                <View
-                  style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: 40,
-                    backgroundColor: "gray",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
+
+            {image ? (
+              <Image
+                source={{ uri: image }}
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 40,
+                }}
+              />
+            ) : (
+              <View
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 40,
+                  backgroundColor: "gray",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text
+                  style={{ fontSize: 24, fontWeight: "bold", color: "white" }}
                 >
-                  <Text
-                    style={{ fontSize: 24, fontWeight: "bold", color: "white" }}
-                  >
-                    {name}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
+                  {abbreviatedName}
+                </Text>
+              </View>
+            )}
           </View>
           <TouchableOpacity
+            onPress={onPickImage}
             style={[
               styles.editButton,
               { backgroundColor: "gray", borderRadius: 5 },
             ]}
           >
-            <Text style={styles.avatarButtonText}>Change</Text>
+            {loadingImagePicker ? (
+              <ActivityIndicator size="small" />
+            ) : (
+              <Text style={styles.avatarButtonText}>Change</Text>
+            )}
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.editButton, { borderColor: "gray", borderWidth: 1 }]}
@@ -247,7 +346,11 @@ function checkInputProfile(
   );
 }
 //------ FOOTER
-function footerProfile() {
+function footerProfile(
+  handleSignOut: () => void,
+  handleResetProfile: () => void,
+  handleSaveProfile: () => void
+) {
   return (
     <View style={styles.containerFooter}>
       <View
@@ -260,6 +363,7 @@ function footerProfile() {
         }}
       >
         <TouchableOpacity
+          onPress={handleSignOut}
           style={[
             styles.changeButton,
             {
@@ -287,6 +391,7 @@ function footerProfile() {
         }}
       >
         <TouchableOpacity
+          onPress={handleResetProfile}
           style={[
             styles.changeButton,
             { borderColor: "green", borderWidth: 1 },
@@ -297,6 +402,7 @@ function footerProfile() {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
+          onPress={handleSaveProfile}
           style={[styles.changeButton, { backgroundColor: "green" }]}
         >
           <Text style={styles.textChangeButton}>Save changes</Text>
