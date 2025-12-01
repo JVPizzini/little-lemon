@@ -81,7 +81,7 @@ export function Onboarding() {
           activeOpacity={0.7}
           disabled={!allowedNextPage}
         >
-          <Text>Next</Text>
+          <Text>Entrar</Text>
         </TouchableOpacity>
       </View>
     </View>

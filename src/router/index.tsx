@@ -16,6 +16,7 @@ import { Profile } from "../screens/Profile";
 import { SplashScreen } from "../screens/SplashScreen";
 import { store } from "../store";
 import { Home } from "../screens/Home";
+
 // import Tab from "./tab";
 
 const Stack = createNativeStackNavigator();
@@ -97,6 +98,7 @@ function Router() {
         "userInfo"
       );
       if (!isMounted) return;
+      console.log("📦 Loaded userInfo from store:", userInfo);
       setIsLoggedIn(Boolean(userInfo?.isLoggedIn));
     };
 
@@ -104,6 +106,7 @@ function Router() {
 
     const unsubscribe = store.subscribe("userInfo", (value) => {
       if (!isMounted) return;
+      console.log("🔔 Store subscription triggered:", value);
       setIsLoggedIn(Boolean((value as { isLoggedIn?: boolean })?.isLoggedIn));
     });
 
@@ -111,11 +114,13 @@ function Router() {
       isMounted = false;
       unsubscribe();
     };
-  }, [isLoggedIn]);
+  }, []);
 
   // if (isLoggedIn === null) {
   //   return <SplashScreen />;
   // }
+
+  console.log("🚀 Router render - isLoggedIn:", isLoggedIn);
 
   return (
     <NavigationContainer>

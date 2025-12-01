@@ -34,6 +34,12 @@ export async function signOutUser() {
 
 //------------------------------- AUX FUNCTIONS --------------------------------
 export function notify(name: string, value: any) {
+  console.log(
+    "📣 notify called for:",
+    name,
+    "listeners count:",
+    listeners.get(name)?.size ?? 0
+  );
   const callbacks = listeners.get(name);
   callbacks?.forEach((cb) => cb(value));
 }

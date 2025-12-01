@@ -8,13 +8,18 @@ import FeedbackForm from "./src/components/feedbackform";
 import LoginScreen from "./src/components/loginScreen";
 import Router from "./src/router";
 import { StatusBar } from "expo-status-bar";
+import { SQLiteProvider } from "expo-sqlite";
+import { initializeDatabase } from "./src/database/initializeDatabase";
 
 export default function App() {
   return (
     <View style={styles.container}>
       <StatusBar style="dark" translucent animated />
-      {/* <LittleLemonHeader /> */}
-      <Router />
+      <SQLiteProvider databaseName="littleLemon.db" onInit={initializeDatabase}>
+        {/* <LittleLemonHeader /> */}
+
+        <Router />
+      </SQLiteProvider>
     </View>
   );
 }
