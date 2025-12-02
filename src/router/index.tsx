@@ -3,7 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createDrawerNavigator } from "@react-navigation/drawer";
-
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import WelcomeScreen from "../components/welcome2";
 import MenuScreen from "../components/menuItems";
 import Login from "../components/loginScreen";
@@ -15,7 +15,7 @@ import { Onboarding } from "../screens/Onboarding";
 import { Profile } from "../screens/Profile";
 import { SplashScreen } from "../screens/SplashScreen";
 import { store } from "../store";
-import { Home } from "../screens/Home";
+import Home from "../screens/Home";
 
 // import Tab from "./tab";
 
@@ -116,38 +116,39 @@ function Router() {
     };
   }, []);
 
-  // if (isLoggedIn === null) {
-  //   return <SplashScreen />;
-  // }
-
   console.log("🚀 Router render - isLoggedIn:", isLoggedIn);
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        // initialRouteName=""
-        screenOptions={{
-          headerShown: false,
-          headerStyle: { backgroundColor: "#ffffff" },
-        }}
-      >
-        {!isLoggedIn ? (
-          <Stack.Screen name="Onboarding" component={Onboarding} />
-        ) : (
-          <Stack.Screen name="Profile" component={Profile} />
-        )}
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <NavigationContainer>
+        <Stack.Navigator
+          initialRouteName={isLoggedIn ? "Home" : "Onboarding"}
+          screenOptions={{
+            headerShown: false,
+            headerStyle: { backgroundColor: "#ffffff" },
+          }}
+        >
+          {!isLoggedIn ? (
+            <Stack.Screen name="Onboarding" component={Onboarding} />
+          ) : (
+            <>
+              <Stack.Screen name="Home" component={Home} />
+              <Stack.Screen name="Profile" component={Profile} />
+            </>
+          )}
 
-        {/* <Stack.Screen name="welcome" component={Welcome} />
+          {/* <Stack.Screen name="welcome" component={Welcome} />
         <Stack.Screen name="Subscribe" component={Subscribe} /> */}
-        {/* <Stack.Screen
+          {/* <Stack.Screen
           name="Welcome"
           component={WelcomeScreen}
           options={{ title: "Home" }}
         /> */}
-        {/* <Stack.Screen name="Menu" component={MenuScreen} /> */}
-        {/* <Stack.Screen name="Login" component={Login} /> */}
-      </Stack.Navigator>
-    </NavigationContainer>
+          {/* <Stack.Screen name="Menu" component={MenuScreen} /> */}
+          {/* <Stack.Screen name="Login" component={Login} /> */}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </GestureHandlerRootView>
   );
 }
 
