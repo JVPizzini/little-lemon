@@ -6,14 +6,22 @@ import { Feather } from "@expo/vector-icons";
 import { FlatList, ScrollView } from "react-native-gesture-handler";
 
 export default function Home() {
-  const menuList = [] as any[];
+  const menuList = [
+    {
+      title: "title",
+      description: "description",
+      price: 0.0,
+      image: "",
+      id: 1,
+    },
+  ] as any[];
   return (
     <View style={styles.container}>
       <FlatList
         ListHeaderComponent={Header}
         keyExtractor={(item) => item.id.toString()}
         data={menuList}
-        renderItem={() => <Text>Item</Text>}
+        renderItem={({ item }) => <OrderItem item={item} />}
       />
     </View>
   );
@@ -111,12 +119,19 @@ const OrderList = () => {
 
         backgroundColor: "#fff",
         justifyContent: "center",
-        padding: 20,
+
         borderBottomWidth: 1,
         borderBottomColor: "#ccc",
       }}
     >
-      <Text style={{ fontSize: 20, fontWeight: "bold" }}>
+      <Text
+        style={{
+          fontSize: 20,
+          fontWeight: "bold",
+          marginLeft: 20,
+          marginTop: 20,
+        }}
+      >
         ORDER FOR DELIVERY!
       </Text>
 
@@ -125,9 +140,8 @@ const OrderList = () => {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{
           marginTop: 10,
-          justifyContent: "space-between",
-          alignItems: "center",
-          width: "100%",
+          paddingLeft: 20,
+          paddingBottom: 20,
         }}
       >
         {listOrders.map((order) => (
@@ -151,6 +165,32 @@ const OrderList = () => {
     </View>
   );
 };
+
+export function OrderItem(item: any) {
+  return (
+    <View
+      style={{
+        borderBottomWidth: 1,
+        borderBottomColor: "#ccc",
+        paddingVertical: 10,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        {/* Container description */}
+        <View style={{ justifyContent: "space-between", flex: 1 }}>
+          {/* title */}
+          <Text style={{ fontWeight: "bold" }}> Title</Text>
+          {/* Description */}
+          <Text style={{ color: "#666" }}>Description</Text>
+          {/* Price */}
+          <Text style={{ fontWeight: "bold", color: "#666" }}>R$0.00</Text>
+        </View>
+        {/* Image */}
+        {/* <Image source={} /> */}
+      </View>
+    </View>
+  );
+}
 
 export const styles = StyleSheet.create({
   container: {
