@@ -1,25 +1,50 @@
 import { View, StyleSheet, Text, Pressable } from "react-native";
 import { Image } from "expo-image";
-import React from "react";
+import React, { use, useEffect, useMemo } from "react";
 
 import { Feather } from "@expo/vector-icons";
 import { FlatList, ScrollView } from "react-native-gesture-handler";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+interface OrderItemProps {
+  category: string;
+  description: string;
+  image: string;
+  name: string;
+  price: number;
+}
 
 export default function Home() {
-  const menuList = [
-    {
-      title: "title",
-      description: "description",
-      price: 0.0,
-      image: "",
-      id: 1,
-    },
-  ] as any[];
+  const insets = useSafeAreaInsets();
+
+  const [menuList, setMenuList] = React.useState<OrderItemProps[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await fetch(
+        "https://raw.githubusercontent.com/Meta-Mobile-Developer-PC/Working-With-Data-API/main/capstone.json"
+      );
+
+      if (response.ok) {
+        const { menu } = await response.json();
+
+        console.log(menu);
+
+        // setMenuList(menu);
+      }
+    };
+
+    return () => {
+      fetchData();
+    };
+  }, []);
+
   return (
     <View style={styles.container}>
       <FlatList
         ListHeaderComponent={Header}
-        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={{ paddingBottom: insets.bottom }}
+        keyExtractor={(item, index) => index.toString()}
         data={menuList}
         renderItem={({ item }) => <OrderItem item={item} />}
       />
@@ -166,7 +191,16 @@ const OrderList = () => {
   );
 };
 
-export function OrderItem(item: any) {
+export function OrderItem({ item }: { item: OrderItemProps }) {
+  const sourceImage = useMemo(
+    () =>
+      `https://github.com/Meta-Mobile-Developer-PC/Working-With-Data-API/blob/main/images/${item.image}?raw=true`,
+
+    [item]
+  );
+  const blurhash =
+    "|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[";
+
   return (
     <View
       style={{
@@ -175,17 +209,37 @@ export function OrderItem(item: any) {
         paddingVertical: 10,
       }}
     >
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          paddingVertical: 10,
+          paddingHorizontal: 20,
+          gap: 10,
+        }}
+      >
         {/* Container description */}
-        <View style={{ justifyContent: "space-between", flex: 1 }}>
+        <View style={{ justifyContent: "space-between", flex: 1, gap: 10 }}>
           {/* title */}
-          <Text style={{ fontWeight: "bold" }}> Title</Text>
+          <Text style={{ fontWeight: "bold" }}>{item.name}</Text>
           {/* Description */}
-          <Text style={{ color: "#666" }}>Description</Text>
+          <Text style={{ color: "#666", flexWrap: "wrap" }}>
+            {item.description}
+          </Text>
           {/* Price */}
-          <Text style={{ fontWeight: "bold", color: "#666" }}>R$0.00</Text>
+          <Text style={{ fontWeight: "bold", color: "#666" }}>
+            {`R$${item.price}`}
+          </Text>
         </View>
         {/* Image */}
+        <Image
+          source={sourceImage}
+          transition={2000}
+          placeholder={{ blurhash }}
+          contentFit="cover"
+          style={{ width: 100, height: 100 }}
+        />
         {/* <Image source={} /> */}
       </View>
     </View>
